@@ -1,0 +1,5 @@
+gpmaster_1|/data/master/gpsne-1
+gpmaster_1|/data/seg1/gpsne0
+gpmaster_1|/data/seg2/gpsne1
+gpnode_1|/data/seg1/gpsne2
+gpnode_1|/data/seg2/gpsne3

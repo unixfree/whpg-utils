@@ -1,0 +1,2 @@
+gpmaster_1
+gpnode_1
