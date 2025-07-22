@@ -45,12 +45,17 @@ This repository provides a fully automated, step-controlled rollback and swap sy
 
 ## 🚀 Usage
 
+### Prepare Swap. change config.env for your environment.. 
+```bash
+sudo vi ./whpg-util/config.env
+```
+
 ### Swap from Broadcom ➜ EDB WarehousePG (with PXF)
 ```bash
-sudo ./swap_broadcom_to_edb_pxf.sh
+sudo ./whpg-util/swap_broadcom_to_edb_pxf.sh
 ```
 
 ### Rollback: Swap from EDB ➜ Broadcom (with PXF)
 ```bash
-sudo ./swap_edb_to_broadcom_pxf.sh
+sudo ../whpg-util/swap_edb_to_broadcom_pxf.sh
 # whpg-utils
