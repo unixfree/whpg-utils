@@ -90,14 +90,6 @@ psql "dbname=postgres user=gpadmin options='-c gp_session_role=utility'"
 ## startup with detail log
 gpstart -av
 
-======
-vi ~/.bashrc
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.16.0.8-2.el9.x86_64
-export PXF_HOME=$GPHOME/pxf
-export PATH=$PATH:$PXF_HOME/bin
-
-psql "dbname=postgres user=gpadmin options='-c gp_session_role=utility'"
-
 =============================================================================================
 SHOW gp_interconnect_type;
 select * from pg_extension;
