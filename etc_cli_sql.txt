@@ -1,0 +1,133 @@
+# ssh-keygen at "gpadmin" user
+# .ssh/id_rsa.pub 의 내용을 복사헤서 다른 모든 노드의 .ssh/authorized_keys 에 추가.
+rm -f ~/.ssh/id_rsa ~/.ssh/id_rsa.pub
+ssh-keygen -t rsa -b 4096 -N "" -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+scp -r .ssh whpg-sm:/home/gpadmin
+scp -r .ssh whpg-s1:/home/gpadmin
+scp -r .ssh whpg-s2:/home/gpadmin
+
+sudo sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config
+sudo sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 마스트 노드에 pkg upload 
+scp -r whpg7_redhat9 gpadmin@whpg-sm:/home/gpadmin
+scp -r whpg7_redhat9 gpadmin@whpg-s1:/home/gpadmin
+scp -r whpg7_redhat9 gpadmin@whpg-s2:/home/gpadmin
+
+sudo dnf install whpg7_redhat9/warehouse-pg-7.2.1_WHPG-1.el9.x86_64.rpm -y 
+sudo dnf install whpg7_redhat9/whpg-backup-1.31.0-WHPG-1.el9.x86_64.rpm -y 
+sudo dnf install whpg7_redhat9/edb-whpg7-pxf-6.10.1-1.el9.x86_64.rpm -y
+
+sudo dnf install whpg6_redhat9/edb-python27-2.7.18-0.el9.x86_64.rpm -y
+sudo dnf install whpg6_redhat9/warehouse-pg-6.27.1-1.el9.x86_64.rpm -y 
+sudo dnf install whpg6_redhat9/whpg-backup-1.31.0-WHPG-1.el9.x86_64.rpm -y 
+sudo dnf install whpg6_redhat9/edb-whpg6-pxf-6.10.1-1.el9.x86_64.rpm -y
+
+sudo chown -R gpadmin:gpadmin /usr/local/greenplum*
+sudo chown -R gpadmin:gpadmin /usr/local/edb-whpg7-pxf
+sudo chown -R gpadmin:gpadmin /usr/local/edb-whpg6-pxf
+
+sudo mkdir -p /data/coordinator
+sudo chown -R gpadmin:gpadmin /data/coordinator
+
+sudo mkdir -p /data/primary
+sudo mkdir -p /data/mirror
+sudo chown -R gpadmin:gpadmin /data/primary 
+sudo chown -R gpadmin:gpadmin /data/mirror 
+
+sudo tee -a /home/gpadmin/.bash_profile << EOF
+source /usr/local/greenplum-db/greenplum_path.sh
+export COORDINATOR_DATA_DIRECTORY=/data/coordinator/gpseg-1 
+export MASTER_DATA_DIRECTORY=/data/coordinator/gpseg-1 
+EOF
+
+# make hostfile_gpinitsystem
+awk '
+  /^[^#]/ && NF > 1 && $2 ~ /^whpg-s/ {
+    print $2
+  }
+' "/etc/hosts" >> "gpconfigs/hostfile_gpinitsystem"
+
+# make 
+cp /usr/local/greenplum-db-7.2.1-WHPG/docs/cli_help/gpconfigs/gpinitsystem_config /home/gpadmin/gpconfigs
+vi /home/gpadmin/gpconfigs/gpinitsystem_config
+
+source /usr/local/greenplum-db/greenplum_path.sh
+
+gpinitsystem -c gpconfigs/gpinitsystem_config -h gpconfigs/hostfile_gpinitsystem –n C –m 200 -S
+gpstate
+gpinitstandby -s whpg-sm -P 5432
+gpstate -f
+
+gpdeletesystem -d $COORDINATOR_DATA_DIRECTORY -f
+
+## startup master only
+gpstart -m
+psql "dbname=postgres user=gpadmin options='-c gp_session_role=utility'"
+
+## startup with detail log
+gpstart -av
+
+======
+vi ~/.bashrc
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.16.0.8-2.el9.x86_64
+export PXF_HOME=$GPHOME/pxf
+export PATH=$PATH:$PXF_HOME/bin
+
+psql "dbname=postgres user=gpadmin options='-c gp_session_role=utility'"
+
+=============================================================================================
+SHOW gp_interconnect_type;
+select * from pg_extension;
+select content, role, port, hostname, address from gp_segment_configuration;
+
+connect whpg;
+CREATE OR REPLACE FUNCTION generate_random_string_md5(length INT)
+RETURNS TEXT AS $$
+BEGIN
+    RETURN SUBSTRING(MD5(RANDOM()::text || CLOCK_TIMESTAMP()::text), 1, length);
+END;
+$$ LANGUAGE plpgsql VOLATILE; 
+
+SELECT generate_random_string_md5(10);
+
+CREATE TABLE test_table (
+    col1 character varying(82),
+    col2 character varying(10),
+    col3 character varying(82),
+    col4 character varying(50),
+    start_datetime integer,
+    gploaded_time timestamp without time zone
+)
+WITH (appendonly=true) DISTRIBUTED BY (col1);
+INSERT INTO test_table values('00001','col2col2','col3col3', 'col4col4col4col4',2019384,now());
+INSERT INTO test_table values('00002','col2col2','col3col3', 'col4col4col4col4',2019384,now());
+INSERT INTO test_table values('00003','col2col2','col3col3', 'col4col4col4col4',2019384,now());
+INSERT INTO test_table values('00004','col2col2','col3col3', 'col4col4col4col4',2019384,now());
+INSERT INTO test_table values(generate_random_string_md5(10),'col2col2','col3col3', 'col4col4col4col4',2019384,now());
+
+CREATE TABLE rtitrans (
+    imsi character varying(82),
+    subscriber_mccmnc character varying(10),
+    msisdn character varying(82),
+    imei character varying(50),
+    called_digits character varying(50),
+    start_datetime integer,
+    end_datetime integer,
+    first_cell_lac integer,
+    first_cell_idsac integer,
+    current_cell_lac integer,
+    current_cell_idsac integer,
+    dr_type integer,
+    status character varying(50),
+    ingest_time bigint,
+    processed_time bigint,
+    export_time bigint,
+    extra_col text,
+    gploaded_time timestamp without time zone
+)
+WITH (appendonly=true) DISTRIBUTED BY (imsi);
