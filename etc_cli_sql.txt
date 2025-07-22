@@ -40,8 +40,16 @@ sudo mkdir -p /data/mirror
 sudo chown -R gpadmin:gpadmin /data/primary 
 sudo chown -R gpadmin:gpadmin /data/mirror 
 
-sudo tee -a /home/gpadmin/.bash_profile << EOF
+sudo tee -a /home/gpadmin/.bashrc  << EOF
 source /usr/local/greenplum-db/greenplum_path.sh
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.16.0.8-2.el9.x86_64
+
+export PATH=$PATH:$PXF_HOME/bin
+export PATH=$PXF_HOME/bin:$PATH
+export PXF_HOME=/usr/local/greenplum-db/pxf
+export PXF_BASE=/home/gpadmin/pxf-base
+export PATH=$PXF_HOME/bin:$PATH
+
 export COORDINATOR_DATA_DIRECTORY=/data/coordinator/gpseg-1 
 export MASTER_DATA_DIRECTORY=/data/coordinator/gpseg-1 
 EOF
