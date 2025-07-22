@@ -9,37 +9,43 @@ scp -r .ssh whpg-sm:/home/gpadmin
 scp -r .ssh whpg-s1:/home/gpadmin
 scp -r .ssh whpg-s2:/home/gpadmin
 
-# ssh 접속 문제가 있을 때.
+## ssh 접속 문제가 있을 때.
 sudo sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config
 sudo sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
 sudo systemctl restart sshd
 
-# 마스트 노드에 pkg upload 
+## 마스트 노드에 다른 모든 노드로 패키지 복사
 scp -r whpg7_redhat9 gpadmin@whpg-sm:/home/gpadmin
 scp -r whpg7_redhat9 gpadmin@whpg-s1:/home/gpadmin
 scp -r whpg7_redhat9 gpadmin@whpg-s2:/home/gpadmin
 
+## WHPG 7 설치.
 sudo dnf install whpg7_redhat9/warehouse-pg-7.2.1_WHPG-1.el9.x86_64.rpm -y 
 sudo dnf install whpg7_redhat9/whpg-backup-1.31.0-WHPG-1.el9.x86_64.rpm -y 
 sudo dnf install whpg7_redhat9/edb-whpg7-pxf-6.10.1-1.el9.x86_64.rpm -y
 
+## WHPG 6 설치.
 sudo dnf install whpg6_redhat9/edb-python27-2.7.18-0.el9.x86_64.rpm -y
 sudo dnf install whpg6_redhat9/warehouse-pg-6.27.1-1.el9.x86_64.rpm -y 
 sudo dnf install whpg6_redhat9/whpg-backup-1.31.0-WHPG-1.el9.x86_64.rpm -y 
 sudo dnf install whpg6_redhat9/edb-whpg6-pxf-6.10.1-1.el9.x86_64.rpm -y
 
+## 폴더 오너/그룹 변경
 sudo chown -R gpadmin:gpadmin /usr/local/greenplum*
 sudo chown -R gpadmin:gpadmin /usr/local/edb-whpg7-pxf
 sudo chown -R gpadmin:gpadmin /usr/local/edb-whpg6-pxf
 
+## 마스트/스탠바이 마스트 노드의 폴더 새성 
 sudo mkdir -p /data/coordinator
 sudo chown -R gpadmin:gpadmin /data/coordinator
 
+## 세그먼드 노드의 폴더 새성 
 sudo mkdir -p /data/primary
 sudo mkdir -p /data/mirror
 sudo chown -R gpadmin:gpadmin /data/primary 
 sudo chown -R gpadmin:gpadmin /data/mirror 
 
+## Shell 환경 설정을 위한 준비.
 sudo tee -a /home/gpadmin/.bashrc  << EOF
 source /usr/local/greenplum-db/greenplum_path.sh
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.16.0.8-2.el9.x86_64
@@ -54,24 +60,27 @@ export COORDINATOR_DATA_DIRECTORY=/data/coordinator/gpseg-1
 export MASTER_DATA_DIRECTORY=/data/coordinator/gpseg-1 
 EOF
 
-# make hostfile_gpinitsystem
+## hostfile_gpinitsystem 생성.
 awk '
   /^[^#]/ && NF > 1 && $2 ~ /^whpg-s/ {
     print $2
   }
 ' "/etc/hosts" >> "gpconfigs/hostfile_gpinitsystem"
 
-# make 
+## gpinitsystem_config 생성 
 cp /usr/local/greenplum-db-7.2.1-WHPG/docs/cli_help/gpconfigs/gpinitsystem_config /home/gpadmin/gpconfigs
 vi /home/gpadmin/gpconfigs/gpinitsystem_config
 
+## WHPG DB Cluster 초기화..
 source /usr/local/greenplum-db/greenplum_path.sh
-
 gpinitsystem -c gpconfigs/gpinitsystem_config -h gpconfigs/hostfile_gpinitsystem –n C –m 200 -S
 gpstate
+
+## Standny Master 설정 
 gpinitstandby -s whpg-sm -P 5432
 gpstate -f
 
+## WHPG DB Cluster 완전 삭제
 gpdeletesystem -d $COORDINATOR_DATA_DIRECTORY -f
 
 ## startup master only
