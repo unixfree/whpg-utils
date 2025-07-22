@@ -9,6 +9,7 @@ scp -r .ssh whpg-sm:/home/gpadmin
 scp -r .ssh whpg-s1:/home/gpadmin
 scp -r .ssh whpg-s2:/home/gpadmin
 
+# ssh 접속 문제가 있을 때.
 sudo sed -i "s/^#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config
 sudo sed -i "s/^#PubkeyAuthentication yes/PubkeyAuthentication yes/" /etc/ssh/sshd_config
 sudo systemctl restart sshd
