@@ -81,7 +81,8 @@ if [ "$STEP_START" -le 5 ]; then
   echo "📦 Installing PXF on all hosts"
   for host in "${host_lines[@]}"; do
     echo -e "\n🔧 Installing PXF on: \e[1;34m$host\e[0m"
-    su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo rpm -ivh /home/gpadmin/$(basename $EDB_PXF_RPM)'"
+    su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo rpm -ivh $EDB_PXF_RPM'"
+#Paul Son# su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo rpm -ivh /home/gpadmin/$(basename $EDB_PXF_RPM)'"
     su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo chown -R $GP_USER:$GP_GROUP $PXF_HOME_NEW'"
     su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo ln -sfn $PXF_HOME_NEW $PXF_HOME'"
     su - "$GP_USER" -c "ssh -tt $GP_USER@$host 'sudo chown -R $GP_USER:$GP_GROUP $PXF_HOME'"
