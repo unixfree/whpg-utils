@@ -65,8 +65,16 @@ fi
 # Step 3: Install WarehousePG
 if [ "$STEP_START" -le 3 ]; then
   echo "📦 Step 3: Installing WarehousePG RPM: $RPM_GP"
+#Paul Son for whpg6 at redhat9#
+  [ -f "$RPM_GP_PY27" ] || { echo "❌ RPM not found: $RPM_GP"; exit 1; }
+  rpm -ivh "$RPM_GP_PY27"
+
   [ -f "$RPM_GP" ] || { echo "❌ RPM not found: $RPM_GP"; exit 1; }
   rpm -ivh "$RPM_GP"
+  
+#Paul Son for whpg6 at redhat9#
+  sudo rm /usr/bin/python
+  sudo ln -s /usr/bin/python2 /usr/bin/python
 fi
 
 # Step 4: Update Greenplum symlink
