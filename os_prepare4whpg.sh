@@ -109,12 +109,6 @@ sudo useradd gpadmin -g gpadmin -m
 
 echo "gpadmin" | sudo passwd --stdin "gpadmin"
 
-#ssh-keygen -t ed25519 -C "your_email@example.com"
-#ssh-keygen -t rsa
-#ssh-copy-id gpadmin@mdw
-#sudo chmod 700 ~/.ssh
-#sudo chmod 600 ~/.ssh/authorized_keys
-
 sudo tee -a /etc/hosts << EOF
 10.0.27.155 whpg-m
 10.0.23.136 whpg-sm
