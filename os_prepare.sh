@@ -105,6 +105,7 @@ ulimit -n 65536 65536
 # Add Group and User for WarehousePG
 sudo groupadd gpadmin
 sudo useradd gpadmin -g gpadmin -m
+#sudo usermod -aG wheel gpadmin
 
 echo "gpadmin" | sudo passwd --stdin "gpadmin"
 
